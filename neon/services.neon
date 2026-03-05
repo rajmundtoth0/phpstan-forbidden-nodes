@@ -1,0 +1,14 @@
+parametersSchema:
+  forbidden_node: mixed()
+
+services:
+  -
+    class: rajmundtoth0\PHPStanForbidden\Services\ForbiddenNodeService
+
+  -
+    class: rajmundtoth0\PHPStanForbidden\Rules\ForbiddenNodeRule
+    tags:
+      - phpstan.rules.rule
+    arguments:
+      config: %forbidden_node%
+      forbiddenNodeService: @rajmundtoth0\PHPStanForbidden\Services\ForbiddenNodeService

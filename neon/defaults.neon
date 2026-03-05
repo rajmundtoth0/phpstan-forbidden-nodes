@@ -1,0 +1,68 @@
+parameters:
+  forbidden_node:
+    # Paths are matched as substrings against the analysed file path.
+    include_paths: []
+    exclude_paths: []
+
+    # List of node rules. Each entry checks node->getType() and optionally the function name.
+    # Node entries can also define optional include_paths/exclude_paths.
+    nodes:
+      # echo
+      -
+        type: Stmt_Echo
+
+      # eval
+      -
+        type: Expr_Eval
+
+      # die/exit
+      -
+        type: Expr_Exit
+
+      # common debug/system functions
+      -
+        type: Expr_FuncCall
+        functions:
+          - dd
+          - debug_backtrace
+          - dump
+          - exec
+          - passthru
+          - phpinfo
+          - print_r
+          - proc_open
+          - shell_exec
+          - system
+          - var_dump
+
+      # method/static call matching (class + method, supports * wildcards)
+      # -
+      #   type: Expr_MethodCall
+      #   methods:
+      #     - class: App\Service\Mailer
+      #       method: send
+      #     - class: App\*
+      #       method: save*
+      #
+      # -
+      #   type: Expr_StaticCall
+      #   methods:
+      #     - class: Illuminate\Support\Facades\DB
+      #       method: raw
+
+      # print
+      -
+        type: Expr_Print
+
+      # backticks
+      -
+        type: Expr_ShellExec
+
+    # Enable detection of `use Tests\\...` in non-test files.
+    use_from_tests: true
+
+    # Ban dynamic calls like `$fn()` where the function name is not a static identifier.
+    forbid_dynamic_function_calls: false
+
+    # Errors are non-ignorable by default so they cannot accidentally be put into the baseline.
+    non_ignorable: true

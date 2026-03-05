@@ -1,0 +1,49 @@
+{
+  "name": "rajmundtoth0/phpstan-forbidden",
+  "description": "Ban different entities through PHPStan",
+  "type": "phpstan-extension",
+  "license": "MIT",
+  "require": {
+    "php": "^8.1",
+    "phpstan/phpstan": "^2.0",
+    "nikic/php-parser": "^4.19 || ^5.0"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "*",
+    "pestphp/pest": "*",
+    "phpstan/phpstan": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "rajmundtoth0\\PHPStanForbidden\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "pest",
+    "coverage": "XDEBUG_MODE=coverage pest --coverage --only-summary-for-coverage-text",
+    "phpstan": "phpstan analyse -c phpstan.neon.dist --debug --no-progress",
+    "ci": [
+      "@phpstan",
+      "@test"
+    ]
+  },
+  "extra": {
+    "phpstan": {
+      "includes": [
+        "extension.neon"
+      ]
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  }
+}

@@ -1,0 +1,11 @@
+includes:
+  - extension.neon
+
+parameters:
+  level: 2
+  paths:
+    - src
+    - tests
+  excludePaths:
+    analyse:
+      - tests/Fixtures/*
