@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use PhpParser\Node;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\Print_;
 use PhpParser\Node\Expr\Variable;
@@ -19,7 +20,7 @@ it('covers forbidden method pattern guard branches', function (): void {
     expect($wildcard->matches(null, null))->toBeFalse();
     expect($wildcard->matches(null, 'anything'))->toBeTrue();
 
-    $exact = new ForbiddenMethodPattern('DateTimeImmutable', 'format');
+    $exact = new ForbiddenMethodPattern(\DateTimeImmutable::class, 'format');
     expect($exact->matches(null, 'format'))->toBeFalse();
 });
 
@@ -27,8 +28,8 @@ it('covers forbidden node parsing and matching edge cases', function (): void {
     expect(ForbiddenNode::fromArray(['type' => 'Not_A_Real_Type']))->toBeNull();
 
     $functionNode = ForbiddenNode::fromArray([
-        'type' => 'Expr_FuncCall',
-        'functions' => 'invalid',
+        'type'          => 'Expr_FuncCall',
+        'functions'     => 'invalid',
         'include_paths' => ['src', '', 1],
     ]);
     expect($functionNode)->toBeInstanceOf(ForbiddenNode::class);
@@ -40,17 +41,17 @@ it('covers forbidden node parsing and matching edge cases', function (): void {
     expect($namedFunctionNode->isFunctionForbidden(null))->toBeFalse();
 
     $invalidMethodsNode = ForbiddenNode::fromArray([
-        'type' => 'Expr_MethodCall',
+        'type'    => 'Expr_MethodCall',
         'methods' => 'invalid',
     ]);
     expect($invalidMethodsNode?->methods)->toBe([]);
 
     $methodsNode = ForbiddenNode::fromArray([
-        'type' => 'Expr_MethodCall',
+        'type'    => 'Expr_MethodCall',
         'methods' => [
             'format',
             123,
-            ['class' => 'DateTimeImmutable'],
+            ['class' => \DateTimeImmutable::class],
             ['class' => 123, 'method' => 'SEND'],
             ['class' => '*', 'method' => 'send'],
             ['class' => '*', 'method' => 'send'],
@@ -61,7 +62,7 @@ it('covers forbidden node parsing and matching edge cases', function (): void {
     expect($methodsNode?->isMethodForbidden([], 'format'))->toBeTrue();
 
     $legacyMethodsNode = ForbiddenNode::fromArray([
-        'type' => 'Expr_MethodCall',
+        'type'      => 'Expr_MethodCall',
         'functions' => ['format', '', 123],
     ]);
     expect($legacyMethodsNode?->methods)->toHaveCount(1);
@@ -82,8 +83,7 @@ it('covers forbidden nodes container filtering branches', function (): void {
 });
 
 it('covers path normalizer invalid path filtering', function (): void {
-    $normalizer = new class
-    {
+    $normalizer = new class {
         use PathNormalizer;
     };
 
@@ -91,14 +91,18 @@ it('covers path normalizer invalid path filtering', function (): void {
 });
 
 it('covers forbidden node service class-name normalization filtering', function (): void {
-    $service = new ForbiddenNodeService();
+    $service             = new ForbiddenNodeService();
     $normalizeClassNames = Closure::bind(
+        /**
+         * @param list<mixed> $classNames
+         * @return list<string>
+         */
         fn (array $classNames): array => $this->normalizeClassNames($classNames),
         $service,
         ForbiddenNodeService::class,
     );
 
-    expect($normalizeClassNames(['', '\\DateTimeImmutable', 'DateTimeImmutable']))->toBe(['DateTimeImmutable']);
+    expect($normalizeClassNames(['', \DateTimeImmutable::class, \DateTimeImmutable::class]))->toBe([\DateTimeImmutable::class]);
 });
 
 it('covers forbidden node service prefiltering', function (): void {
@@ -106,7 +110,7 @@ it('covers forbidden node service prefiltering', function (): void {
         'nodes' => [
             ['type' => 'Expr_Print', 'functions' => null],
         ],
-        'use_from_tests' => false,
+        'use_from_tests'                => false,
         'forbid_dynamic_function_calls' => true,
     ]);
     $service = new ForbiddenNodeService();
@@ -121,7 +125,7 @@ it('covers forbidden node service prefiltering', function (): void {
     expect($service->shouldProcessNode($config, new FuncCall(new Variable('fn'))))->toBeTrue();
 
     $isDynamicFunctionCall = Closure::bind(
-        fn (mixed $node): bool => $this->isDynamicFunctionCall($node),
+        fn (Node $node): bool => $this->isDynamicFunctionCall($node),
         $service,
         ForbiddenNodeService::class,
     );

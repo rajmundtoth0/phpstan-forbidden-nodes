@@ -29,7 +29,7 @@ final class ForbiddenNodeService
             }
         }
 
-        if ($config->includePaths === []) {
+        if ([] === $config->includePaths) {
             return true;
         }
 
@@ -63,35 +63,37 @@ final class ForbiddenNodeService
             return $violations;
         }
 
-        $nodeType = $node->getType();
+        $nodeType       = $node->getType();
         $forbiddenNodes = $config->nodesForType($nodeType);
 
         $functionName = $this->extractFunctionName($node);
-        $methodName = $this->extractMethodName($node);
-        $classNames = $this->extractClassNames($node, $scope);
+        $methodName   = $this->extractMethodName($node);
+        $classNames   = $this->extractClassNames($node, $scope);
 
         foreach ($forbiddenNodes as $forbiddenNode) {
-
             if (!$forbiddenNode->matchesFile($file)) {
                 continue;
             }
 
-            if ($node instanceof FuncCall && $forbiddenNode->functions === null) {
+            if ($node instanceof FuncCall && null === $forbiddenNode->functions) {
                 $violations[] = sprintf('Forbidden code: %s is not allowed.', $nodeType);
+
                 continue;
             }
 
-            if ($node instanceof FuncCall && $functionName !== null && $forbiddenNode->isFunctionForbidden($functionName)) {
+            if ($node instanceof FuncCall && null !== $functionName && $forbiddenNode->isFunctionForbidden($functionName)) {
                 $violations[] = sprintf('Forbidden code: function %s() is not allowed.', $functionName);
+
                 continue;
             }
 
             if (($node instanceof MethodCall || $node instanceof StaticCall) && $forbiddenNode->isMethodForbidden($classNames, $methodName)) {
                 $violations[] = sprintf('Forbidden code: method %s is not allowed.', $this->formatMethodSignature($classNames, $methodName));
+
                 continue;
             }
 
-            if (!$node instanceof FuncCall && !$node instanceof MethodCall && !$node instanceof StaticCall && $forbiddenNode->functions === null) {
+            if (!$node instanceof FuncCall && !$node instanceof MethodCall && !$node instanceof StaticCall && null === $forbiddenNode->functions) {
                 $violations[] = sprintf('Forbidden code: %s is not allowed.', $nodeType);
             }
         }
@@ -156,7 +158,7 @@ final class ForbiddenNodeService
     }
 
     /**
-     * @param list<string> $classNames
+     * @param array<mixed> $classNames
      * @return list<string>
      */
     private function normalizeClassNames(array $classNames): array
@@ -164,7 +166,7 @@ final class ForbiddenNodeService
         $normalized = [];
 
         foreach ($classNames as $className) {
-            if ($className === '') {
+            if (!is_string($className) || '' === $className) {
                 continue;
             }
 
@@ -184,9 +186,9 @@ final class ForbiddenNodeService
      */
     private function formatMethodSignature(array $classNames, ?string $methodName): string
     {
-        $methodName = $methodName ?? '<dynamic>';
+        $methodName ??= '<dynamic>';
 
-        if ($classNames === []) {
+        if ([] === $classNames) {
             return sprintf('%s()', $methodName);
         }
 
@@ -206,7 +208,7 @@ final class ForbiddenNodeService
     {
         $file = str_replace('\\', '/', $file);
 
-        if (preg_match('~/tests?/~i', $file) === 1) {
+        if (1 === preg_match('~/tests?/~i', $file)) {
             return true;
         }
 
@@ -217,7 +219,7 @@ final class ForbiddenNodeService
     {
         foreach ($use->uses as $useUse) {
             $name = $useUse->name->toString();
-            if (str_starts_with($name, 'Tests\\') || $name === 'Tests') {
+            if (str_starts_with($name, 'Tests\\') || 'Tests' === $name) {
                 return true;
             }
         }

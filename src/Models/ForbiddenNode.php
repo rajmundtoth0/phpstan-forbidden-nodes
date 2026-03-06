@@ -14,10 +14,10 @@ final class ForbiddenNode
 {
     use PathNormalizer;
 
-    /** @var list<string>|null */
+    /** @var null|list<string> */
     public readonly ?array $functions;
 
-    /** @var list<ForbiddenMethodPattern>|null */
+    /** @var null|list<ForbiddenMethodPattern> */
     public readonly ?array $methods;
 
     /** @var list<string> */
@@ -27,8 +27,8 @@ final class ForbiddenNode
     public readonly array $excludePaths;
 
     /**
-     * @param list<string>|null $functions
-     * @param list<ForbiddenMethodPattern>|null $methods
+     * @param null|array<mixed> $functions
+     * @param null|list<ForbiddenMethodPattern> $methods
      * @param list<string> $includePaths
      * @param list<string> $excludePaths
      */
@@ -39,8 +39,8 @@ final class ForbiddenNode
         array $includePaths = [],
         array $excludePaths = [],
     ) {
-        $this->functions = $functions === null ? null : $this->normalizeFunctions($functions);
-        $this->methods = $methods;
+        $this->functions    = null === $functions ? null : $this->normalizeFunctions($functions);
+        $this->methods      = $methods;
         $this->includePaths = $this->normalizePaths($includePaths);
         $this->excludePaths = $this->normalizePaths($excludePaths);
     }
@@ -50,14 +50,21 @@ final class ForbiddenNode
      */
     public static function fromArray(array $raw): ?self
     {
-        $nodeType = NodeType::tryFrom($raw['type'] ?? null);
-        if ($nodeType === null) {
+        $nodeTypeValue = $raw['type'] ?? null;
+        if (!is_string($nodeTypeValue)) {
+            return null;
+        }
+
+        $nodeType = NodeType::tryFrom($nodeTypeValue);
+        if (null === $nodeType) {
             return null;
         }
 
         $functions = $raw['functions'] ?? null;
-        if ($functions !== null && !is_array($functions)) {
+        if (null !== $functions && !is_array($functions)) {
             $functions = null;
+        } elseif (is_array($functions)) {
+            $functions = array_values($functions);
         }
 
         $methods = self::parseMethodPatterns($raw, $nodeType, $functions);
@@ -73,11 +80,11 @@ final class ForbiddenNode
 
     public function isFunctionForbidden(?string $functionName): bool
     {
-        if ($this->functions === null) {
+        if (null === $this->functions) {
             return true;
         }
 
-        if ($functionName === null) {
+        if (null === $functionName) {
             return false;
         }
 
@@ -89,15 +96,15 @@ final class ForbiddenNode
      */
     public function isMethodForbidden(array $classNames, ?string $methodName): bool
     {
-        if ($this->methods === null) {
+        if (null === $this->methods) {
             return true;
         }
 
-        if ($methodName === null) {
+        if (null === $methodName) {
             return false;
         }
 
-        if ($classNames === []) {
+        if ([] === $classNames) {
             $classNames = [null];
         }
 
@@ -122,7 +129,7 @@ final class ForbiddenNode
             }
         }
 
-        if ($this->includePaths === []) {
+        if ([] === $this->includePaths) {
             return true;
         }
 
@@ -144,7 +151,7 @@ final class ForbiddenNode
         $normalized = [];
 
         foreach ($functions as $function) {
-            if (!is_string($function) || $function === '') {
+            if (!is_string($function) || '' === $function) {
                 continue;
             }
 
@@ -156,8 +163,8 @@ final class ForbiddenNode
 
     /**
      * @param array<string,mixed> $raw
-     * @param list<string>|null $legacyFunctions
-     * @return list<ForbiddenMethodPattern>|null
+     * @param null|array<mixed> $legacyFunctions
+     * @return null|list<ForbiddenMethodPattern>
      */
     private static function parseMethodPatterns(array $raw, NodeType $nodeType, ?array $legacyFunctions): ?array
     {
@@ -166,7 +173,7 @@ final class ForbiddenNode
         }
 
         if (array_key_exists('methods', $raw)) {
-            if ($raw['methods'] === null) {
+            if (null === $raw['methods']) {
                 return null; // all method/static calls are forbidden for this node type
             }
 
@@ -176,8 +183,9 @@ final class ForbiddenNode
 
             $patterns = [];
             foreach ($raw['methods'] as $entry) {
-                if (is_string($entry) && $entry !== '') {
+                if (is_string($entry) && '' !== $entry) {
                     $patterns[] = new ForbiddenMethodPattern('*', $entry);
+
                     continue;
                 }
 
@@ -186,12 +194,12 @@ final class ForbiddenNode
                 }
 
                 $methodPattern = $entry['method'] ?? $entry['method_pattern'] ?? null;
-                if (!is_string($methodPattern) || $methodPattern === '') {
+                if (!is_string($methodPattern) || '' === $methodPattern) {
                     continue;
                 }
 
                 $classPattern = $entry['class'] ?? $entry['class_pattern'] ?? '*';
-                if (!is_string($classPattern) || $classPattern === '') {
+                if (!is_string($classPattern) || '' === $classPattern) {
                     $classPattern = '*';
                 }
 
@@ -202,12 +210,13 @@ final class ForbiddenNode
         }
 
         // Backward-compatible shorthand: `functions` on method/static nodes means any class + listed methods.
-        if ($legacyFunctions !== null) {
+        if (null !== $legacyFunctions) {
             $patterns = [];
             foreach ($legacyFunctions as $methodName) {
-                if (!is_string($methodName) || $methodName === '') {
+                if (!is_string($methodName) || '' === $methodName) {
                     continue;
                 }
+
                 $patterns[] = new ForbiddenMethodPattern('*', $methodName);
             }
 
@@ -224,7 +233,7 @@ final class ForbiddenNode
     private static function uniqueMethodPatterns(array $patterns): array
     {
         $unique = [];
-        $seen = [];
+        $seen   = [];
 
         foreach ($patterns as $pattern) {
             $key = $pattern->uniqueKey();
@@ -233,15 +242,15 @@ final class ForbiddenNode
             }
 
             $seen[$key] = true;
-            $unique[] = $pattern;
+            $unique[]   = $pattern;
         }
 
-        return array_values($unique);
+        return $unique;
     }
 
     private static function supportsMethodPatterns(NodeType $nodeType): bool
     {
-        return $nodeType === NodeType::NODE_EXPR_METHOD_CALL || $nodeType === NodeType::NODE_EXPR_STATIC_CALL;
+        return NodeType::NODE_EXPR_METHOD_CALL === $nodeType || NodeType::NODE_EXPR_STATIC_CALL === $nodeType;
     }
 
     /**
@@ -251,7 +260,19 @@ final class ForbiddenNode
     private static function readPaths(array $raw, string $snakeCaseKey, string $camelCaseKey): array
     {
         $paths = $raw[$snakeCaseKey] ?? $raw[$camelCaseKey] ?? [];
+        if (!is_array($paths)) {
+            return [];
+        }
 
-        return is_array($paths) ? $paths : [];
+        $normalized = [];
+        foreach ($paths as $path) {
+            if (!is_string($path) || '' === $path) {
+                continue;
+            }
+
+            $normalized[] = $path;
+        }
+
+        return $normalized;
     }
 }

@@ -35,7 +35,6 @@ final class ForbiddenNodeRule implements Rule
     }
 
     /**
-     * @param Node $node
      * @return list<RuleError>
      */
     public function processNode(Node $node, Scope $scope): array

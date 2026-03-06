@@ -11,6 +11,7 @@ use rajmundtoth0\PHPStanForbidden\Services\ForbiddenNodeService;
 
 /**
  * @extends RuleTestCase<ForbiddenNodeRule>
+ * @internal
  */
 class RuleHarness extends RuleTestCase
 {

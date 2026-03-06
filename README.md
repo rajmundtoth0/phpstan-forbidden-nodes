@@ -1,3 +1,10 @@
+[![Version](https://poser.pugx.org/rajmundtoth0/phpstan-forbidden/version)](https://packagist.org/packages/rajmundtoth0/phpstan-forbidden)
+![PHPStan](https://img.shields.io/badge/PHPStan-Level_MAX-brightgreen)
+[![Build](https://github.com/rajmundtoth0/phpstan-forbidden/actions/workflows/php.yml/badge.svg)](https://github.com/rajmundtoth0/phpstan-forbidden/actions/workflows/php.yml)
+[![PHP Version Require](https://poser.pugx.org/rajmundtoth0/phpstan-forbidden/require/php)](https://packagist.org/packages/rajmundtoth0/phpstan-forbidden)
+[![License](https://poser.pugx.org/rajmundtoth0/phpstan-forbidden/license)](https://packagist.org/packages/rajmundtoth0/phpstan-forbidden)
+[![Total Downloads](https://poser.pugx.org/rajmundtoth0/phpstan-forbidden/downloads)](https://packagist.org/packages/rajmundtoth0/phpstan-forbidden)
+
 # PHPStan Forbidden Nodes
 
 A PHPStan extension that reports forbidden PHP AST nodes and call patterns:

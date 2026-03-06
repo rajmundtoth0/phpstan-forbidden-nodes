@@ -15,13 +15,13 @@ final class ForbiddenMethodPattern
 
     public function __construct(string $classPattern, string $methodPattern)
     {
-        $this->classPattern = self::normalizeClassName($classPattern);
+        $this->classPattern  = self::normalizeClassName($classPattern);
         $this->methodPattern = strtolower($methodPattern);
     }
 
     public function matches(?string $className, ?string $methodName): bool
     {
-        if ($methodName === null || $methodName === '') {
+        if (null === $methodName || '' === $methodName) {
             return false;
         }
 
@@ -29,11 +29,11 @@ final class ForbiddenMethodPattern
             return false;
         }
 
-        if ($this->classPattern === '*') {
+        if ('*' === $this->classPattern) {
             return true;
         }
 
-        if ($className === null || $className === '') {
+        if (null === $className || '' === $className) {
             return false;
         }
 
@@ -42,7 +42,7 @@ final class ForbiddenMethodPattern
 
     public function uniqueKey(): string
     {
-        return $this->classPattern . '::' . $this->methodPattern;
+        return $this->classPattern.'::'.$this->methodPattern;
     }
 
     private static function normalizeClassName(string $className): string
@@ -52,12 +52,12 @@ final class ForbiddenMethodPattern
 
     private static function matchesPattern(string $pattern, string $value): bool
     {
-        if ($pattern === '*') {
+        if ('*' === $pattern) {
             return true;
         }
 
-        $regex = '~^' . str_replace('\*', '.*', preg_quote($pattern, '~')) . '$~';
+        $regex = '~^'.str_replace('\*', '.*', preg_quote($pattern, '~')).'$~';
 
-        return preg_match($regex, $value) === 1;
+        return 1 === preg_match($regex, $value);
     }
 }

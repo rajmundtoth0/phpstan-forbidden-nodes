@@ -37,7 +37,7 @@ final class ForbiddenNodes
     ) {
         $this->includePaths = $this->normalizePaths($includePaths);
         $this->excludePaths = $this->normalizePaths($excludePaths);
-        $this->nodesByType = $this->groupNodesByType($this->nodes);
+        $this->nodesByType  = $this->groupNodesByType($this->nodes);
     }
 
     /**
@@ -45,15 +45,29 @@ final class ForbiddenNodes
      */
     public static function fromArray(array $raw): self
     {
-        $nodes = [];
+        $nodes    = [];
+        $rawNodes = $raw['nodes'] ?? [];
 
-        foreach (($raw['nodes'] ?? []) as $rawNode) {
+        if (!is_array($rawNodes)) {
+            $rawNodes = [];
+        }
+
+        foreach ($rawNodes as $rawNode) {
             if (!is_array($rawNode)) {
                 continue;
             }
 
-            $node = ForbiddenNode::fromArray($rawNode);
-            if ($node === null) {
+            $normalizedRawNode = [];
+            foreach ($rawNode as $key => $value) {
+                if (!is_string($key)) {
+                    continue;
+                }
+
+                $normalizedRawNode[$key] = $value;
+            }
+
+            $node = ForbiddenNode::fromArray($normalizedRawNode);
+            if (null === $node) {
                 continue;
             }
 
@@ -77,8 +91,20 @@ final class ForbiddenNodes
     private static function readPaths(array $raw, string $snakeCaseKey, string $camelCaseKey): array
     {
         $paths = $raw[$snakeCaseKey] ?? $raw[$camelCaseKey] ?? [];
+        if (!is_array($paths)) {
+            return [];
+        }
 
-        return is_array($paths) ? $paths : [];
+        $normalized = [];
+        foreach ($paths as $path) {
+            if (!is_string($path) || '' === $path) {
+                continue;
+            }
+
+            $normalized[] = $path;
+        }
+
+        return $normalized;
     }
 
     public function hasNodeType(string $nodeType): bool

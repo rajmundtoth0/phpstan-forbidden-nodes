@@ -2,10 +2,12 @@ includes:
   - extension.neon
 
 parameters:
-  level: 2
+  level: max
   paths:
     - src
     - tests
+  parallel:
+    maximumNumberOfProcesses: 1
   excludePaths:
     analyse:
       - tests/Fixtures/*
