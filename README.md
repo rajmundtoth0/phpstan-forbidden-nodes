@@ -8,6 +8,21 @@ A PHPStan extension that reports forbidden PHP AST nodes and call patterns:
 - dynamic function calls (`$fn()`) when enabled
 - `use Tests\...` imports inside non-test files
 
+This package is based on [ekino/phpstan-banned-code](https://github.com/ekino/phpstan-banned-code) and keeps the same core goal: using PHPStan to block unwanted code patterns during analysis.
+
+## Comparison with ekino/phpstan-banned-code
+
+Compared with `ekino/phpstan-banned-code`, this package also supports:
+
+| Feature | `ekino/phpstan-banned-code` | `rajmundtoth0/phpstan-forbidden` |
+| --- | --- | --- |
+| Ban node types and function calls | Yes | Yes |
+| Ban specific instance/static method calls | No | Yes |
+| Wildcard matching for class/method patterns | Limited | Yes |
+| Global and per-rule `include_paths` / `exclude_paths` | No | Yes |
+| Optional detection of dynamic function calls like `$fn()` | No | Yes |
+| Packaged config modes | Basic extension config | Defaults or services-only |
+
 ## Installation
 
 ```bash
