@@ -20,6 +20,11 @@ final class ForbiddenNode
     /** @var null|list<ForbiddenMethodPattern> */
     public readonly ?array $methods;
 
+    /** @var null|list<ForbiddenClassPattern> */
+    public readonly ?array $classes;
+
+    public readonly bool $matchesAll;
+
     /** @var list<string> */
     public readonly array $includePaths;
 
@@ -29,6 +34,7 @@ final class ForbiddenNode
     /**
      * @param null|array<mixed> $functions
      * @param null|list<ForbiddenMethodPattern> $methods
+     * @param null|list<ForbiddenClassPattern> $classes
      * @param list<string> $includePaths
      * @param list<string> $excludePaths
      */
@@ -36,11 +42,14 @@ final class ForbiddenNode
         public readonly NodeType $nodeType,
         ?array $functions,
         ?array $methods = null,
+        ?array $classes = null,
         array $includePaths = [],
         array $excludePaths = [],
     ) {
         $this->functions    = null === $functions ? null : $this->normalizeFunctions($functions);
         $this->methods      = $methods;
+        $this->classes      = $classes;
+        $this->matchesAll   = $this->inferMatchesAll();
         $this->includePaths = $this->normalizePaths($includePaths);
         $this->excludePaths = $this->normalizePaths($excludePaths);
     }
@@ -68,11 +77,13 @@ final class ForbiddenNode
         }
 
         $methods = self::parseMethodPatterns($raw, $nodeType, $functions);
+        $classes = self::parseClassPatterns($raw, $nodeType);
 
         return new self(
             nodeType: $nodeType,
             functions: $functions,
             methods: $methods,
+            classes: $classes,
             includePaths: self::readPaths($raw, 'include_paths', 'includePaths'),
             excludePaths: self::readPaths($raw, 'exclude_paths', 'excludePaths'),
         );
@@ -119,6 +130,26 @@ final class ForbiddenNode
         return false;
     }
 
+    /**
+     * @param list<string> $classNames
+     */
+    public function findForbiddenClass(array $classNames): ?string
+    {
+        if (null === $this->classes) {
+            return $classNames[0] ?? null;
+        }
+
+        foreach ($classNames as $className) {
+            foreach ($this->classes as $pattern) {
+                if ($pattern->matches($className)) {
+                    return $className;
+                }
+            }
+        }
+
+        return null;
+    }
+
     public function matchesFile(string $file): bool
     {
         $file = str_replace('\\', '/', $file);
@@ -159,6 +190,41 @@ final class ForbiddenNode
         }
 
         return array_values(array_unique($normalized));
+    }
+
+    /**
+     * @param array<string,mixed> $raw
+     * @return null|list<ForbiddenClassPattern>
+     */
+    private static function parseClassPatterns(array $raw, NodeType $nodeType): ?array
+    {
+        if (!self::supportsClassPatterns($nodeType)) {
+            return [];
+        }
+
+        if (!array_key_exists('classes', $raw)) {
+            return null;
+        }
+
+        if (null === $raw['classes']) {
+            return null;
+        }
+
+        if (!is_array($raw['classes'])) {
+            return [];
+        }
+
+        $patterns = [];
+
+        foreach ($raw['classes'] as $entry) {
+            if (!is_string($entry) || '' === $entry) {
+                continue;
+            }
+
+            $patterns[] = new ForbiddenClassPattern($entry);
+        }
+
+        return self::uniqueClassPatterns($patterns);
     }
 
     /**
@@ -248,9 +314,53 @@ final class ForbiddenNode
         return $unique;
     }
 
+    /**
+     * @param list<ForbiddenClassPattern> $patterns
+     * @return list<ForbiddenClassPattern>
+     */
+    private static function uniqueClassPatterns(array $patterns): array
+    {
+        $unique = [];
+        $seen   = [];
+
+        foreach ($patterns as $pattern) {
+            $key = $pattern->uniqueKey();
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $seen[$key] = true;
+            $unique[]   = $pattern;
+        }
+
+        return $unique;
+    }
+
     private static function supportsMethodPatterns(NodeType $nodeType): bool
     {
         return NodeType::NODE_EXPR_METHOD_CALL === $nodeType || NodeType::NODE_EXPR_STATIC_CALL === $nodeType;
+    }
+
+    private static function supportsClassPatterns(NodeType $nodeType): bool
+    {
+        return NodeType::NODE_EXPR_NEW === $nodeType;
+    }
+
+    private function inferMatchesAll(): bool
+    {
+        if (self::supportsMethodPatterns($this->nodeType)) {
+            return null === $this->methods;
+        }
+
+        if (self::supportsClassPatterns($this->nodeType)) {
+            return null === $this->classes;
+        }
+
+        if (NodeType::NODE_EXPR_FUNC_CALL === $this->nodeType) {
+            return null === $this->functions;
+        }
+
+        return true;
     }
 
     /**

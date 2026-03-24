@@ -9,6 +9,7 @@ use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt\Echo_;
 use rajmundtoth0\PHPStanForbidden\Enums\NodeType;
+use rajmundtoth0\PHPStanForbidden\Models\ForbiddenClassPattern;
 use rajmundtoth0\PHPStanForbidden\Models\ForbiddenMethodPattern;
 use rajmundtoth0\PHPStanForbidden\Models\ForbiddenNode;
 use rajmundtoth0\PHPStanForbidden\Models\ForbiddenNodes;
@@ -22,6 +23,12 @@ it('covers forbidden method pattern guard branches', function (): void {
 
     $exact = new ForbiddenMethodPattern(\DateTimeImmutable::class, 'format');
     expect($exact->matches(null, 'format'))->toBeFalse();
+});
+
+it('covers forbidden class pattern guard branches', function (): void {
+    $wildcard = new ForbiddenClassPattern('*Exception');
+    expect($wildcard->matches(null))->toBeFalse();
+    expect($wildcard->matches(\RuntimeException::class))->toBeTrue();
 });
 
 it('covers forbidden node parsing and matching edge cases', function (): void {
@@ -66,6 +73,28 @@ it('covers forbidden node parsing and matching edge cases', function (): void {
         'functions' => ['format', '', 123],
     ]);
     expect($legacyMethodsNode?->methods)->toHaveCount(1);
+
+    $invalidClassesNode = ForbiddenNode::fromArray([
+        'type'    => 'Expr_New',
+        'classes' => 'invalid',
+    ]);
+    expect($invalidClassesNode?->classes)->toBe([]);
+    expect($invalidClassesNode?->matchesAll)->toBeFalse();
+
+    $classesNode = ForbiddenNode::fromArray([
+        'type'    => 'Expr_New',
+        'classes' => [
+            \RuntimeException::class,
+            '',
+            123,
+            '\RUNTIMEEXCEPTION',
+            '*Exception',
+        ],
+    ]);
+    expect($classesNode?->classes)->toHaveCount(2);
+    expect($classesNode?->findForbiddenClass([]))->toBeNull();
+    expect($classesNode?->findForbiddenClass([\LogicException::class]))->toBe(\LogicException::class);
+    expect($classesNode?->findForbiddenClass([\DateTimeImmutable::class]))->toBeNull();
 });
 
 it('covers forbidden nodes container filtering branches', function (): void {

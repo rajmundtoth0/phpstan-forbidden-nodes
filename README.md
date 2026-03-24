@@ -12,6 +12,7 @@ A PHPStan extension that reports forbidden PHP AST nodes and call patterns:
 - node types (for example `Stmt_Echo`, `Expr_Eval`, `Expr_Print`)
 - specific function calls
 - specific instance/static method calls (class + method patterns with `*` wildcard)
+- specific class instantiations (for example `new RuntimeException()`)
 - dynamic function calls (`$fn()`) when enabled
 - `use Tests\...` imports inside non-test files
 
@@ -24,6 +25,7 @@ Compared with `ekino/phpstan-banned-code`, this package also supports:
 | Feature | `ekino/phpstan-banned-code` | `rajmundtoth0/phpstan-forbidden` |
 | --- | --- | --- |
 | Ban node types and function calls | Yes | Yes |
+| Ban specific class instantiations | No | Yes |
 | Ban specific instance/static method calls | No | Yes |
 | Wildcard matching for class/method patterns | Limited | Yes |
 | Global and per-rule `include_paths` / `exclude_paths` | No | Yes |
@@ -88,6 +90,12 @@ parameters:
           - class: App\*
             method: save*
 
+      # Ban selected class instantiations.
+      - type: Expr_New
+        classes:
+          - RuntimeException
+          - App\Exceptions\*
+
       # Ban selected static method calls.
       - type: Expr_StaticCall
         methods:
@@ -105,7 +113,9 @@ parameters:
 ## Notes
 
 - `functions: null` on `Expr_FuncCall` bans all function calls.
+- `classes: null` on `Expr_New` bans all class instantiations.
 - `methods: null` on `Expr_MethodCall` or `Expr_StaticCall` bans all calls of that node type.
+- `classes` on `Expr_New` supports `*` wildcards and normalizes leading `\`.
 - `methods` supports both `class/method` and `class_pattern/method_pattern` keys.
 - For backward compatibility, `functions` on `Expr_MethodCall` and `Expr_StaticCall` is treated as `methods` with class `*`.
 

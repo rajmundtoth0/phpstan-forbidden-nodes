@@ -35,6 +35,13 @@ parameters:
           - system
           - var_dump
 
+      # class instantiation matching (supports * wildcards)
+      # -
+      #   type: Expr_New
+      #   classes:
+      #     - RuntimeException
+      #     - App\Exceptions\*
+
       # method/static call matching (class + method, supports * wildcards)
       # -
       #   type: Expr_MethodCall
