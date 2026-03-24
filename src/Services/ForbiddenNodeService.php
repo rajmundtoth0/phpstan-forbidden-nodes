@@ -7,6 +7,7 @@ namespace rajmundtoth0\PHPStanForbidden\Services;
 use PhpParser\Node;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\MethodCall;
+use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
@@ -75,13 +76,7 @@ final class ForbiddenNodeService
                 continue;
             }
 
-            if ($node instanceof FuncCall && null === $forbiddenNode->functions) {
-                $violations[] = sprintf('Forbidden code: %s is not allowed.', $nodeType);
-
-                continue;
-            }
-
-            if ($node instanceof FuncCall && null !== $functionName && $forbiddenNode->isFunctionForbidden($functionName)) {
+            if ($node instanceof FuncCall && null !== $forbiddenNode->functions && null !== $functionName && $forbiddenNode->isFunctionForbidden($functionName)) {
                 $violations[] = sprintf('Forbidden code: function %s() is not allowed.', $functionName);
 
                 continue;
@@ -93,7 +88,16 @@ final class ForbiddenNodeService
                 continue;
             }
 
-            if (!$node instanceof FuncCall && !$node instanceof MethodCall && !$node instanceof StaticCall && null === $forbiddenNode->functions) {
+            if ($node instanceof New_ && null !== $forbiddenNode->classes) {
+                $className = $forbiddenNode->findForbiddenClass($classNames);
+                if (null !== $className) {
+                    $violations[] = sprintf('Forbidden code: class %s is not allowed.', $className);
+
+                    continue;
+                }
+            }
+
+            if ($forbiddenNode->matchesAll) {
                 $violations[] = sprintf('Forbidden code: %s is not allowed.', $nodeType);
             }
         }
@@ -152,6 +156,14 @@ final class ForbiddenNodeService
             }
 
             return $this->normalizeClassNames($scope->getType($node->class)->getObjectClassNames());
+        }
+
+        if ($node instanceof New_) {
+            if ($node->class instanceof Name) {
+                return [$this->normalizeClassName($scope->resolveName($node->class))];
+            }
+
+            return $this->normalizeClassNames($scope->getType($node)->getObjectClassNames());
         }
 
         return [];

@@ -266,6 +266,71 @@ dataset('forbidden_cases', [
             ['Forbidden code: method DateTimeImmutable::getTimestamp() is not allowed.', 8],
         ],
     ],
+    'class instantiation exact match' => [
+        [
+            'include_paths' => [],
+            'exclude_paths' => [],
+            'nodes'         => [
+                [
+                    'type'    => 'Expr_New',
+                    'classes' => [
+                        \RuntimeException::class,
+                    ],
+                ],
+            ],
+            'use_from_tests'                => true,
+            'forbid_dynamic_function_calls' => false,
+            'non_ignorable'                 => true,
+        ],
+        [__DIR__.'/Fixtures/app/ForbiddenClassInstantiations.php'],
+        [
+            ['Forbidden code: class RuntimeException is not allowed.', 5],
+            ['Forbidden code: class RuntimeException is not allowed.', 7],
+        ],
+    ],
+    'class instantiation wildcard match' => [
+        [
+            'include_paths' => [],
+            'exclude_paths' => [],
+            'nodes'         => [
+                [
+                    'type'    => 'Expr_New',
+                    'classes' => [
+                        '*Exception',
+                    ],
+                ],
+            ],
+            'use_from_tests'                => true,
+            'forbid_dynamic_function_calls' => false,
+            'non_ignorable'                 => true,
+        ],
+        [__DIR__.'/Fixtures/app/ForbiddenClassInstantiations.php'],
+        [
+            ['Forbidden code: class RuntimeException is not allowed.', 5],
+            ['Forbidden code: class LogicException is not allowed.', 6],
+            ['Forbidden code: class RuntimeException is not allowed.', 7],
+        ],
+    ],
+    'all class instantiations when classes key is omitted' => [
+        [
+            'include_paths' => [],
+            'exclude_paths' => [],
+            'nodes'         => [
+                [
+                    'type' => 'Expr_New',
+                ],
+            ],
+            'use_from_tests'                => true,
+            'forbid_dynamic_function_calls' => false,
+            'non_ignorable'                 => true,
+        ],
+        [__DIR__.'/Fixtures/app/ForbiddenClassInstantiations.php'],
+        [
+            ['Forbidden code: Expr_New is not allowed.', 5],
+            ['Forbidden code: Expr_New is not allowed.', 6],
+            ['Forbidden code: Expr_New is not allowed.', 7],
+        ],
+    ],
     'legacy functions key works for method calls' => [
         [
             'include_paths' => [],
@@ -415,6 +480,24 @@ dataset('allowed_cases', [
             'non_ignorable'                 => true,
         ],
         [__DIR__.'/Fixtures/app/ForbiddenMethodStaticCalls.php'],
+    ],
+    'class instantiation mismatch is ignored' => [
+        [
+            'include_paths' => [],
+            'exclude_paths' => [],
+            'nodes'         => [
+                [
+                    'type'    => 'Expr_New',
+                    'classes' => [
+                        \DateTimeImmutable::class,
+                    ],
+                ],
+            ],
+            'use_from_tests'                => true,
+            'forbid_dynamic_function_calls' => false,
+            'non_ignorable'                 => true,
+        ],
+        [__DIR__.'/Fixtures/app/ForbiddenClassInstantiations.php'],
     ],
 ]);
 
