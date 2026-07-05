@@ -108,7 +108,7 @@ it('covers forbidden nodes container filtering branches', function (): void {
     ]);
 
     expect($config->nodes)->toHaveCount(1);
-    expect($config->includePaths)->toBe(['tests/']);
+    expect($config->includePaths)->toBe(['tests']);
 });
 
 it('covers path normalizer invalid path filtering', function (): void {
@@ -116,7 +116,45 @@ it('covers path normalizer invalid path filtering', function (): void {
         use PathNormalizer;
     };
 
-    expect($normalizer->normalizePaths(['foo\\bar', '', 123, 'foo/bar']))->toBe(['foo/bar/']);
+    expect($normalizer->normalizePaths(['foo\\bar', '', 123, 'foo/bar']))->toBe(['foo/bar']);
+});
+
+it('matches paths on directory-segment boundaries and not partial segments', function (): void {
+    $matcher = new class {
+        use PathNormalizer;
+    };
+
+    // Segment match: `/app` matches an `app` directory, at the root or nested.
+    expect($matcher->matchesPath('/project/app/Foo.php', '/app'))->toBeTrue();
+    expect($matcher->matchesPath('/project/app/Foo.php', 'app'))->toBeTrue();
+    expect($matcher->matchesPath('/project/src/app/Foo.php', 'app'))->toBeTrue();
+
+    // No partial-segment match: `app` must not match `myapp` or `application`.
+    expect($matcher->matchesPath('/project/myapp/Foo.php', 'app'))->toBeFalse();
+    expect($matcher->matchesPath('/project/application/Foo.php', 'app'))->toBeFalse();
+
+    // Backslashes in the file path are normalized.
+    expect($matcher->matchesPath('C:\\project\\app\\Foo.php', '/app'))->toBeTrue();
+
+    // A specific file path still matches.
+    expect($matcher->matchesPath('/project/app/legacy/File.php', '/app/legacy/File.php'))->toBeTrue();
+});
+
+it('matches paths with fnmatch wildcards, including across separators', function (): void {
+    $matcher = new class {
+        use PathNormalizer;
+    };
+
+    // A wildcard lets a user scope a generated directory anywhere in the tree.
+    expect($matcher->matchesPath('/project/.bladestan/__templates__/app/View.php', '*/.bladestan/*'))->toBeTrue();
+    expect($matcher->matchesPath('/project/app/View.php', '*/.bladestan/*'))->toBeFalse();
+
+    // An absolute prefix anchors the match to one project.
+    expect($matcher->matchesPath('/srv/project/app/Foo.php', '/srv/project/app/*'))->toBeTrue();
+    expect($matcher->matchesPath('/srv/other/app/Foo.php', '/srv/project/app/*'))->toBeFalse();
+
+    // The empty needle never matches.
+    expect($matcher->matchesPath('/project/app/Foo.php', ''))->toBeFalse();
 });
 
 it('covers forbidden node service class-name normalization filtering', function (): void {

@@ -152,10 +152,8 @@ final class ForbiddenNode
 
     public function matchesFile(string $file): bool
     {
-        $file = str_replace('\\', '/', $file);
-
         foreach ($this->excludePaths as $needle) {
-            if (str_contains($file, $needle)) {
+            if ($this->matchesPath($file, $needle)) {
                 return false;
             }
         }
@@ -165,7 +163,7 @@ final class ForbiddenNode
         }
 
         foreach ($this->includePaths as $needle) {
-            if (str_contains($file, $needle)) {
+            if ($this->matchesPath($file, $needle)) {
                 return true;
             }
         }
