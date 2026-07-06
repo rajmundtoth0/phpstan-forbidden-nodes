@@ -54,11 +54,14 @@ Default config is shipped in `neon/defaults.neon`. Override any part in your pro
 ```neon
 parameters:
   forbidden_node:
-    # Optional: analyse only these paths (substring match).
+    # Optional: analyse only these paths. Paths match on directory-segment
+    # boundaries (`/app` matches an `app` directory, not `myapp`). A path with a
+    # wildcard (`*`, `?`, `[`) is matched with fnmatch, where `*` also crosses
+    # separators, e.g. `*/generated/*` or an absolute prefix.
     include_paths:
       - /app
 
-    # Optional: skip these paths (substring match).
+    # Optional: skip these paths (same matching rules as include_paths).
     exclude_paths:
       - /vendor
       - /storage

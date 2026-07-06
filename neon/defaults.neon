@@ -1,6 +1,9 @@
 parameters:
   forbidden_node:
-    # Paths are matched as substrings against the analysed file path.
+    # Paths are matched against the analysed file path on directory-segment
+    # boundaries, so `/app` matches an `app` directory but not `myapp`. A path
+    # containing a wildcard (asterisk, question mark or bracket) is matched with
+    # fnmatch, where an asterisk also crosses directory separators.
     include_paths: []
     exclude_paths: []
 

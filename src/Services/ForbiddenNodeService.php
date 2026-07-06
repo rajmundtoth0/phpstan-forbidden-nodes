@@ -14,18 +14,19 @@ use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Use_;
 use PHPStan\Analyser\Scope;
 use rajmundtoth0\PHPStanForbidden\Models\ForbiddenNodes;
+use rajmundtoth0\PHPStanForbidden\Trait\PathNormalizer;
 
 /**
  * @internal
  */
 final class ForbiddenNodeService
 {
+    use PathNormalizer;
+
     public function shouldAnalyseFile(ForbiddenNodes $config, string $file): bool
     {
-        $file = str_replace('\\', '/', $file);
-
         foreach ($config->excludePaths as $needle) {
-            if (str_contains($file, $needle)) {
+            if ($this->matchesPath($file, $needle)) {
                 return false;
             }
         }
@@ -35,7 +36,7 @@ final class ForbiddenNodeService
         }
 
         foreach ($config->includePaths as $needle) {
-            if (str_contains($file, $needle)) {
+            if ($this->matchesPath($file, $needle)) {
                 return true;
             }
         }
